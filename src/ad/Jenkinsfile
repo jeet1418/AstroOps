@@ -1,0 +1,255 @@
+@Library('jenkins-shared-library') _
+
+pipeline {
+
+    agent {
+        docker {
+            image 'jeet1418/ad-agent:v1'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    options {
+        skipDefaultCheckout(true)
+        timestamps()
+    }
+
+    environment {
+
+        // ====================================================
+        // AWS
+        // ====================================================
+
+        AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
+        AWS_DEFAULT_REGION = 'us-east-1'
+
+
+        // ====================================================
+        // ECR
+        // ====================================================
+
+        ECR_REPOSITORY = 'ad'
+
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+
+
+        // ====================================================
+        // APPLICATION
+        // ====================================================
+
+        SERVICE_NAME = 'ad'
+        SERVICE_PATH = 'src/ad'
+
+
+        // ====================================================
+        // SONARQUBE
+        // ====================================================
+
+        SONAR_PROJECT_NAME = 'ad'
+        SONAR_PROJECT_KEY = 'ad'
+    }
+
+
+    stages {
+
+        // ====================================================
+        // 1. CHECKOUT APPLICATION
+        // ====================================================
+
+        stage('Checkout Application') {
+
+            steps {
+
+                checkoutApp()
+            }
+        }
+
+
+        // ====================================================
+        // 2. GET GIT COMMIT ID
+        // ====================================================
+
+        stage('Get Commit ID') {
+
+            steps {
+
+                script {
+
+                    env.IMAGE_TAG = getCommitId()
+
+                    echo "Git Commit: ${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+
+        // ====================================================
+        // 5. SONARQUBE ANALYSIS
+        // ====================================================
+
+        stage('SonarQube Analysis') {
+
+            steps {
+
+                sonarAnalysis(
+                    servicePath: env.SERVICE_PATH,
+                    projectName: env.SONAR_PROJECT_NAME,
+                    projectKey: env.SONAR_PROJECT_KEY
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 6. QUALITY GATE
+        // ====================================================
+
+        stage('Quality Gate') {
+
+            steps {
+                qualityGate()
+            }
+        }
+
+        // ====================================================
+        // 8. TRIVY FILESYSTEM SCAN
+        // ====================================================
+
+        stage('Trivy Filesystem Scan') {
+
+            steps {
+
+                trivyFilesystemScan(
+                    servicePath: env.SERVICE_PATH
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 9. LOGIN TO ECR
+        // ====================================================
+
+        stage('Login to ECR') {
+
+            steps {
+
+                ecrLogin(
+                    region: env.AWS_DEFAULT_REGION,
+                    registry: env.ECR_REGISTRY
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 10. DOCKER BUILD
+        // ====================================================
+
+        stage('Docker Image Build') {
+
+            steps {
+
+                dockerBuild(
+                    image: "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}",
+                    dockerfile: "${env.SERVICE_PATH}/Dockerfile",
+                    platform: 'linux/amd64'
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 11. TRIVY IMAGE SCAN
+        // ====================================================
+
+        stage('Trivy Image Scan') {
+
+            steps {
+
+                trivyImageScan(
+                    image: "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 12. PUSH IMAGE TO ECR
+        // ====================================================
+
+        stage('Push Image to ECR') {
+
+            steps {
+
+                pushToEcr(
+                    image: "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 13. CHECKOUT HELM REPOSITORY
+        // ====================================================
+
+        stage('Checkout Helm Repository') {
+
+            steps {
+
+                checkoutHelm(
+
+                    directory: 'helm-repo',
+                    credentialsId: 'HELM_GIT',
+                    url: 'https://github.com/YOUR-USERNAME/YOUR-HELM-REPO.git',
+                    branch: 'main'
+
+                )
+            }
+        }
+
+
+        // ====================================================
+        // 14. UPDATE HELM VALUES
+        // ====================================================
+
+        stage('Update Helm Values') {
+
+            steps {
+
+                dir('helm-repo') {
+
+                    updateHelmValues(
+                        helmFile: 'ad/values.yaml',
+                        imageRepo:
+                            "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}",
+                        imageTag: env.IMAGE_TAG
+                    )
+                }
+            }
+        }
+
+
+        // ====================================================
+        // 15. COMMIT & PUSH HELM CHANGES
+        // ====================================================
+
+        stage('Commit and Push Helm Changes') {
+
+            steps {
+
+                dir('helm-repo') {
+
+                    commitAndPushHelm(
+                        credentialsId: 'HELM_GIT',
+                        gitUrl:
+                            'github.com/YOUR-USERNAME/YOUR-HELM-REPO.git',
+                        commitMessage:
+                            "Update ad image to ${env.IMAGE_TAG}"
+                    )
+                }
+            }
+        }
+
+    }
+}
