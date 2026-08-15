@@ -1,4 +1,4 @@
-**Note:** This project is a copy of `opentelemetry-demo`. Thanks to the team and contributors for opensourcing this wonderful demo project. Definitely one of the best on internet.
+**Note:** AstroOps is based on the `opentelemetry-demo` application. The original application and microservices are provided by the OpenTelemetry project. AstroOps focuses on building the DevOps, infrastructure, CI/CD, GitOps, and observability platform around the application.
 
 <!-- markdownlint-disable-next-line -->
 # <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OTel logo" width="45"> AstroOps
