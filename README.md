@@ -1,141 +1,175 @@
-**Note:** This project is a fork of `opentelemetry-demo`. Thanks to the team and contributors for opensourcing this wonderful demo project. Definitely one of the best on internet.
+**Note:** This project is a copy of `opentelemetry-demo`. Thanks to the team and contributors for opensourcing this wonderful demo project. Definitely one of the best on internet.
 
 <!-- markdownlint-disable-next-line -->
-# <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OTel logo" width="45"> OpenTelemetry Demo
+# <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OTel logo" width="45"> AstroOps
 
-[![Slack](https://img.shields.io/badge/slack-@cncf/otel/demo-brightgreen.svg?logo=slack)](https://cloud-native.slack.com/archives/C03B4CWV4DA)
-[![Version](https://img.shields.io/github/v/release/open-telemetry/opentelemetry-demo?color=blueviolet)](https://github.com/open-telemetry/opentelemetry-demo/releases)
-[![Commits](https://img.shields.io/github/commits-since/open-telemetry/opentelemetry-demo/latest?color=ff69b4&include_prereleases)](https://github.com/open-telemetry/opentelemetry-demo/graphs/commit-activity)
-[![Downloads](https://img.shields.io/docker/pulls/otel/demo)](https://hub.docker.com/r/otel/demo)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?color=red)](https://github.com/open-telemetry/opentelemetry-demo/blob/main/LICENSE)
-[![Integration Tests](https://github.com/open-telemetry/opentelemetry-demo/actions/workflows/run-integration-tests.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-demo/actions/workflows/run-integration-tests.yml)
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opentelemetry-demo)](https://artifacthub.io/packages/helm/opentelemetry-helm/opentelemetry-demo)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9247/badge)](https://www.bestpractices.dev/en/projects/9247)
+AstroOps is a **cloud-native DevOps and GitOps project** built around the **OpenTelemetry Demo application**, consisting of multiple microservices deployed on **Amazon EKS**.
 
-## Welcome to the OpenTelemetry Astronomy Shop Demo
+The project implements an end-to-end DevOps workflow covering **infrastructure provisioning, continuous integration, containerization, security scanning, Kubernetes application packaging, GitOps-based deployment, and observability**.
 
-This repository contains the OpenTelemetry Astronomy Shop, a microservice-based
-distributed system intended to illustrate the implementation of OpenTelemetry in
-a near real-world environment.
+The AWS infrastructure is managed using **modular Terraform configurations**, with separate infrastructure for the Terraform backend and EKS environment. Terraform is integrated with **Jenkins CI** to automate the provisioning and management of resources such as **VPC, subnets, security groups, Amazon EKS, Amazon S3, and DynamoDB**.
 
-Our goals are threefold:
+Application CI is implemented through **Jenkins pipelines for the microservices**, with a reusable **Jenkins Shared Library** providing common functionality for source-code checkout, Git commit identification, SonarQube analysis, quality gates, Trivy security scanning, Docker image builds, Amazon ECR authentication, image publishing, and Helm configuration updates.
 
-- Provide a realistic example of a distributed system that can be used to
-  demonstrate OpenTelemetry instrumentation and observability.
-- Build a base for vendors, tooling authors, and others to extend and
-  demonstrate their OpenTelemetry integrations.
-- Create a living example for OpenTelemetry contributors to use for testing new
-  versions of the API, SDK, and other components or enhancements.
+The CI pipelines use **custom Docker agent images** containing the required tools and dependencies, providing consistent and isolated environments for different microservices.
 
-We've already made [huge
-progress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),
-and development is ongoing. We hope to represent the full feature set of
-OpenTelemetry across its languages in the future.
+Kubernetes deployments are managed using **Helm charts**, with individual charts for the microservices and supporting components. After a successful CI pipeline, the corresponding Docker image is pushed to **Amazon ECR**, and the Helm configuration is updated with the new image repository and tag.
 
-If you'd like to help (**which we would love**), check out our [contributing
-guidance](./CONTRIBUTING.md).
+The Helm repository serves as the **GitOps source of truth** for Kubernetes deployments. **Argo CD** monitors the repository and automatically synchronizes changes to the **Amazon EKS** cluster.
 
-If you'd like to extend this demo or maintain a fork of it, read our
-[fork guidance](https://opentelemetry.io/docs/demo/forking/).
+For **observability and monitoring**, AstroOps uses **kube-prometheus-stack**, providing **Prometheus, Grafana, and Alertmanager** for monitoring the Kubernetes cluster and deployed microservices. Prometheus collects and stores metrics, Grafana provides dashboards and visualization, and Alertmanager manages alerts generated by Prometheus.
 
-## Quick start
+Overall, AstroOps demonstrates a complete **Infrastructure as Code → CI → Containerization → Security Scanning → Container Registry → Helm → GitOps → Kubernetes → Observability** workflow using **AWS, Terraform, Jenkins, Docker, Amazon ECR, Helm, Argo CD, and kube-prometheus-stack**.
 
-You can be up and running with the demo in a few minutes. Check out the docs for
-your preferred deployment method:
 
-- [Docker](https://opentelemetry.io/docs/demo/docker_deployment/)
-- [Kubernetes](https://opentelemetry.io/docs/demo/kubernetes_deployment/)
+## Related Repositories
 
-## Documentation
+### Application
 
-For detailed documentation, see [Demo Documentation][docs]. If you're curious
-about a specific feature, the [docs landing page][docs] can point you in the
-right direction.
+[**AstroOps**](https://github.com/jeet1418/AstroOps.git)
 
-## Demos featuring the Astronomy Shop
+The OpenTelemetry Demo-based microservices application deployed on Amazon EKS.
 
-We welcome any vendor to fork the project to demonstrate their services and
-adding a link below. The community is committed to maintaining the project and
-keeping it up to date for you.
+### Infrastructure
 
-|                           |                |                                  |
-|---------------------------|----------------|----------------------------------|
-| [AlibabaCloud LogService] | [Elastic]      | [OpenSearch]                     |
-| [AppDynamics]             | [Google Cloud] | [Sentry]                         |
-| [Aspecto]                 | [Grafana Labs] | [ServiceNow Cloud Observability] |
-| [Axiom]                   | [Guance]       | [Splunk]                         |
-| [Axoflow]                 | [Honeycomb.io] | [Sumo Logic]                     |
-| [Azure Data Explorer]     | [Instana]      | [TelemetryHub]                   |
-| [Coralogix]               | [Kloudfuse]    | [Teletrace]                      |
-| [Dash0]                   | [Liatrio]      | [Tracetest]                      |
-| [Datadog]                 | [Logz.io]      | [Uptrace]                        |
-| [Dynatrace]               | [New Relic]    |                                  |
+[**AstroOps Terraform**](https://github.com/jeet1418/AstroOps-terraform.git)
 
-## Contributing
+Terraform configuration for provisioning the AWS infrastructure, including VPC, EKS, subnets, security groups, S3, and DynamoDB.
 
-To get involved with the project see our [CONTRIBUTING](CONTRIBUTING.md)
-documentation. Our [SIG Calls](CONTRIBUTING.md#join-a-sig-call) are every other
-Monday at 8:30 AM PST and anyone is welcome.
+### Kubernetes / Helm
 
-## Project leadership
+[**AstroOps Helm**](https://github.com/jeet1418/AstroOps-helm.git)
 
-[Maintainers](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer)
-([@open-telemetry/demo-maintainers](https://github.com/orgs/open-telemetry/teams/demo-maintainers)):
+Helm charts used to package and deploy the AstroOps microservices and supporting components.
 
-- [Juliano Costa](https://github.com/julianocosta89), Datadog
-- [Mikko Viitanen](https://github.com/mviitane), Dynatrace
-- [Pierre Tessier](https://github.com/puckpuck), Honeycomb
+### Jenkins Shared Library
 
-[Approvers](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver)
-([@open-telemetry/demo-approvers](https://github.com/orgs/open-telemetry/teams/demo-approvers)):
+[**AstroOps Jenkins Shared Library**](https://github.com/jeet1418/AstroOps-jenkins-shared-library.git)
 
-- [Cedric Ziel](https://github.com/cedricziel) Grafana Labs
-- [Penghan Wang](https://github.com/wph95), AppDynamics
-- [Reiley Yang](https://github.com/reyang), Microsoft
-- [Roger Coll](https://github.com/rogercoll), Elastic
-- [Ziqi Zhao](https://github.com/fatsheep9146), Alibaba
+Reusable Jenkins pipeline functions used by the microservice CI pipelines.
 
-Emeritus:
+## Key Technologies
 
-- [Austin Parker](https://github.com/austinlparker)
-- [Carter Socha](https://github.com/cartersocha)
-- [Michael Maxwell](https://github.com/mic-max)
-- [Morgan McLean](https://github.com/mtwo)
+- **AWS** – Cloud infrastructure
+- **Amazon EKS** – Kubernetes platform
+- **Terraform** – Infrastructure provisioning
+- **Jenkins** – CI automation
+- **Jenkins Shared Library** – Reusable CI/CD pipeline functions
+- **SonarQube** – Static code analysis and quality gates
+- **Trivy** – Security and vulnerability scanning
+- **Docker** – Containerization
+- **Amazon ECR** – Container image registry
+- **Helm** – Kubernetes application packaging
+- **Argo CD** – GitOps-based continuous deployment
+- **kube-prometheus-stack** – Kubernetes monitoring and observability
+- **Prometheus** – Metrics collection and storage
+- **Grafana** – Metrics visualization and dashboards
 
-### Thanks to all the people who have contributed
+## Infrastructure
 
-[![contributors](https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-demo)](https://github.com/open-telemetry/opentelemetry-demo/graphs/contributors)
+Terraform is used to provision the AWS infrastructure required by AstroOps, including:
 
-[docs]: https://opentelemetry.io/docs/demo/
+- **VPC**
+- **Subnets**
+- **Security Groups**
+- **Amazon EKS Cluster**
+- **Amazon S3**
+- **Amazon DynamoDB**
 
-<!-- Links for Demos featuring the Astronomy Shop section -->
+The infrastructure is organized into reusable Terraform modules where appropriate.
 
-[AlibabaCloud LogService]: https://github.com/aliyun-sls/opentelemetry-demo
-[AppDynamics]: https://www.appdynamics.com/blog/cloud/how-to-observe-opentelemetry-demo-app-in-appdynamics-cloud/
-[Aspecto]: https://github.com/aspecto-io/opentelemetry-demo
-[Axiom]: https://play.axiom.co/axiom-play-qf1k/dashboards/otel.traces.otel-demo-traces
-[Axoflow]: https://axoflow.com/opentelemetry-support-in-more-detail-in-axosyslog-and-syslog-ng/
-[Azure Data Explorer]: https://github.com/Azure/Azure-kusto-opentelemetry-demo
-[Coralogix]: https://coralogix.com/blog/configure-otel-demo-send-telemetry-data-coralogix
-[Dash0]: https://github.com/dash0hq/opentelemetry-demo
-[Datadog]: https://docs.datadoghq.com/opentelemetry/guide/otel_demo_to_datadog
-[Dynatrace]: https://www.dynatrace.com/news/blog/opentelemetry-demo-application-with-dynatrace/
-[Elastic]: https://github.com/elastic/opentelemetry-demo
-[Google Cloud]: https://github.com/GoogleCloudPlatform/opentelemetry-demo
-[Grafana Labs]: https://github.com/grafana/opentelemetry-demo
-[Guance]: https://github.com/GuanceCloud/opentelemetry-demo
-[Honeycomb.io]: https://github.com/honeycombio/opentelemetry-demo
-[Instana]: https://github.com/instana/opentelemetry-demo
-[Kloudfuse]: https://github.com/kloudfuse/opentelemetry-demo
-[Liatrio]: https://github.com/liatrio/opentelemetry-demo
-[Logz.io]: https://logz.io/learn/how-to-run-opentelemetry-demo-with-logz-io/
-[New Relic]: https://github.com/newrelic/opentelemetry-demo
-[OpenSearch]: https://github.com/opensearch-project/opentelemetry-demo
-[Sentry]: https://github.com/getsentry/opentelemetry-demo
-[ServiceNow Cloud Observability]: https://docs.lightstep.com/otel/quick-start-operator#send-data-from-the-opentelemetry-demo
-[Splunk]: https://github.com/signalfx/opentelemetry-demo
-[Sumo Logic]: https://www.sumologic.com/blog/common-opentelemetry-demo-application/
-[TelemetryHub]: https://github.com/TelemetryHub/opentelemetry-demo/tree/telemetryhub-backend
-[Teletrace]: https://github.com/teletrace/opentelemetry-demo
-[Tracetest]: https://github.com/kubeshop/opentelemetry-demo
-[Uptrace]: https://github.com/uptrace/uptrace/tree/master/example/opentelemetry-demo
+Terraform operations are executed through Jenkins CI pipelines, allowing the AWS infrastructure to be provisioned and managed through an automated workflow. This includes provisioning the Terraform backend and the EKS infrastructure.
+
+## Jenkins Docker Agents
+
+AstroOps uses **custom Docker agent images** for Jenkins pipelines.
+
+Each agent image contains the tools and dependencies required by the corresponding CI pipeline, providing consistent and isolated build environments.
+
+The Docker agents are used for tasks such as:
+
+- SonarQube analysis
+- Trivy scanning
+- Docker image builds
+- Amazon ECR operations
+- Application-specific build and test processes
+
+## CI/CD
+
+Each microservice has its own Jenkins pipeline. The pipelines follow a consistent process:
+
+1. Checkout application source code
+2. Identify the Git commit ID
+3. Run SonarQube analysis
+4. Validate the SonarQube quality gate
+5. Run Trivy filesystem scanning
+6. Authenticate with Amazon ECR
+7. Build the Docker image
+8. Scan the Docker image with Trivy
+9. Push the image to Amazon ECR
+10. Update the corresponding Helm values
+11. Commit and push the Helm changes
+
+Common pipeline logic is implemented through a **Jenkins Shared Library** to keep the individual Jenkinsfiles simple and maintainable.
+
+## Server Provisioning
+
+AstroOps includes **Bash provisioning scripts** for configuring the AWS EC2 instances used by the project.
+
+The provisioning scripts automate the installation and configuration of required tools on:
+
+- **Jenkins Server**
+- **Jump Server**
+
+The Jenkins server provisioning includes tools required for CI/CD and infrastructure automation, such as:
+
+- **Docker**
+- **Terraform**
+- **AWS CLI**
+- **kubectl**
+- **Helm**
+- **eksctl**
+- **Trivy**
+- **Git**
+- **Other required dependencies**
+
+The Jump Server provisioning includes the tools required for **administrative access and Kubernetes management**.
+
+Using provisioning scripts makes server configuration **reproducible, consistent, and easier to maintain**, while reducing the need for manual installation and configuration.
+
+## GitOps Deployment
+
+After a new container image is pushed to Amazon ECR, Jenkins updates the image reference in the Helm repository.
+
+Argo CD monitors the Helm repository and detects the Git change. It then synchronizes the desired state with the Amazon EKS cluster.
+
+This provides a Git-based deployment workflow where the Helm repository acts as the **source of truth** for Kubernetes deployments.
+
+## Observability
+
+AstroOps uses **kube-prometheus-stack** to provide comprehensive monitoring, metrics collection, alerting, and visualization across the Kubernetes environment.
+
+The observability stack includes:
+
+- **kube-prometheus-stack** – Provides Prometheus, Grafana, Alertmanager, and Kubernetes monitoring components
+- **Prometheus** – Collects and stores application and Kubernetes metrics
+- **Grafana** – Provides dashboards for visualizing application and infrastructure metrics
+
+This setup provides centralized visibility into the **health, performance, resource utilization, and operational status** of the AstroOps microservices and Kubernetes infrastructure running on Amazon EKS.
+
+## Project Goals
+
+The main goal of AstroOps is to demonstrate a production-style DevOps workflow covering:
+
+- **Infrastructure as Code** – Provision and manage AWS infrastructure using Terraform
+- **Containerization** – Build and package microservices using Docker
+- **Continuous Integration** – Automate CI pipelines using Jenkins
+- **Code Quality** – Analyze source code using SonarQube
+- **Security Scanning** – Scan source files and container images using Trivy
+- **Container Image Management** – Build and store images in Amazon ECR
+- **Kubernetes Deployment** – Deploy microservices to Amazon EKS
+- **Helm-based Application Packaging** – Manage Kubernetes applications using Helm
+- **GitOps** – Maintain Kubernetes desired state through Git
+- **Continuous Deployment** – Automate deployments using Argo CD
+- **Observability** – Monitor applications and infrastructure using kube-prometheus-stack
+- **AWS Cloud Infrastructure** – Build and manage cloud infrastructure on AWS
