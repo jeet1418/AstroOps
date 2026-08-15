@@ -178,7 +178,7 @@ docker volume create sonarqube_logs
 docker volume create sonarqube_extensions
 
 docker run -d \
-    --name sonar \
+    --name sonarqube \
     --restart unless-stopped \
     -p 9000:9000 \
     -v sonarqube_data:/opt/sonarqube/data \
