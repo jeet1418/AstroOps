@@ -4,7 +4,7 @@ pipeline {
 
     agent {
         docker {
-            image 'jeet1418/email-agent:v1'
+            image 'jeet1418/ruby-agent:v1'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
@@ -88,6 +88,14 @@ pipeline {
         // ====================================================
 
         stage('SonarQube Analysis') {
+            
+            agent {
+                docker {
+                    image 'sonarsource/sonar-scanner-cli:12.1.0.3233_8.0.1'
+                    reuseNode true
+                }
+            }
+
 
             steps {
 
