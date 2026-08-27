@@ -11,12 +11,17 @@ echo "=========================================="
 # 1. Update system
 # --------------------------------------------------
 
+echo "Updating system packages..."
+
 apt update -y
+apt-get upgrade -y
 
 
 # --------------------------------------------------
 # 2. Install basic packages
 # --------------------------------------------------
+
+echo "Installing basic packages..."
 
 apt install -y \
     ca-certificates \
@@ -28,10 +33,14 @@ apt install -y \
 
 
 # --------------------------------------------------
-# 3. Install Java 17
+# 3. Install Java 21
 # --------------------------------------------------
 
-apt install -y openjdk-17-jdk
+echo "Installing Java 21..."
+
+apt install fontconfig openjdk-21-jre -y
+
+echo "Java installed:"
 
 java --version
 
@@ -40,55 +49,52 @@ java --version
 # 4. Install Jenkins
 # --------------------------------------------------
 
+echo "Installing Jenkins..."
+
 mkdir -p /etc/apt/keyrings
 
 wget -O /etc/apt/keyrings/jenkins-keyring.asc \
     https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
 
-echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] \
-https://pkg.jenkins.io/debian-stable binary/" \
-    > /etc/apt/sources.list.d/jenkins.list
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
 
 apt update -y
 
-apt install -y jenkins
+apt install jenkins -y
 
 systemctl enable jenkins
 systemctl start jenkins
 
+echo "Jenkins service status:"
+systemctl is-active jenkins
 
 # --------------------------------------------------
 # 5. Install Terraform
 # --------------------------------------------------
 
-wget -O- https://apt.releases.hashicorp.com/gpg | \
-    gpg --dearmor \
-    -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "Installing Terraform..."
 
-echo "deb [arch=$(dpkg --print-architecture) \
-signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-https://apt.releases.hashicorp.com \
-$(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" \
-    > /etc/apt/sources.list.d/hashicorp.list
+wget -O - https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
 
 apt update -y
 
-apt install -y terraform
+apt install terraform -y
+
+echo "Terraform installed:"
+terraform version
 
 
 # --------------------------------------------------
 # 6. Install Docker
 # --------------------------------------------------
 
-apt remove -y \
-    docker.io \
-    docker-compose \
-    docker-compose-v2 \
-    docker-doc \
-    docker-buildx \
-    podman-docker \
-    containerd \
-    runc || true
+echo "Installing Docker..."
+
+apt remove -y $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc docker-buildx podman-docker containerd runc | cut -f1)
 
 install -m 0755 -d /etc/apt/keyrings
 
@@ -98,14 +104,16 @@ curl -fsSL \
 
 chmod a+r /etc/apt/keyrings/docker.asc
 
-echo "deb [arch=$(dpkg --print-architecture) \
-signed-by=/etc/apt/keyrings/docker.asc] \
-https://download.docker.com/linux/ubuntu \
-$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") \
-stable" \
-    > /etc/apt/sources.list.d/docker.list
+tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
-apt update -y
+apt update
 
 apt install -y \
     docker-ce \
@@ -117,18 +125,26 @@ apt install -y \
 systemctl enable docker
 systemctl start docker
 
+echo "Docker service status:"
+systemctl is-active docker
+
 
 # --------------------------------------------------
 # 7. Add users to Docker group
 # --------------------------------------------------
 
+echo "Adding Jenkins and Ubuntu users to Docker group..."
+
 usermod -aG docker jenkins
 usermod -aG docker ubuntu
 
+echo "Docker group configuration completed."
 
 # --------------------------------------------------
 # 8. Install AWS CLI
 # --------------------------------------------------
+
+echo "Installing AWS CLI..."
 
 ARCH=$(dpkg --print-architecture)
 
@@ -151,9 +167,15 @@ unzip -q /tmp/awscliv2.zip -d /tmp
 rm -rf /tmp/aws /tmp/awscliv2.zip
 
 
+echo "AWS CLI installed:"
+aws --version
+
+
 # --------------------------------------------------
 # 9. Install Trivy
 # --------------------------------------------------
+
+echo "Installing Trivy..."
 
 wget -qO - \
     https://aquasecurity.github.io/trivy-repo/deb/public.key | \
@@ -168,10 +190,16 @@ apt update -y
 
 apt install -y trivy
 
+echo "Trivy installed:"
+trivy --version
+
+
 
 # --------------------------------------------------
 # 10. Start SonarQube
 # --------------------------------------------------
+
+echo "Starting SonarQube container..."
 
 docker volume create sonarqube_data
 docker volume create sonarqube_logs
@@ -186,17 +214,29 @@ docker run -d \
     -v sonarqube_extensions:/opt/sonarqube/extensions \
     sonarqube:lts-community
 
+echo "SonarQube container started."
+
+docker ps --filter "name=sonarqube"
 
 # --------------------------------------------------
 # 11. Restart Jenkins
 # --------------------------------------------------
 
+echo "Restarting Jenkins..."
+
 systemctl restart jenkins
+
+echo "Jenkins service status:"
+systemctl is-active jenkins
 
 
 # --------------------------------------------------
 # 12. Verification
 # --------------------------------------------------
+
+echo "=========================================="
+echo "Installed Versions"
+echo "=========================================="
 
 
 java --version

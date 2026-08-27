@@ -10,10 +10,17 @@ echo "=========================================="
 # 1. Update system
 # --------------------------------------------------
 
+echo "Updating system packages..."
+
 apt-get update -y
 apt-get upgrade -y
 
-# Required packages
+# --------------------------------------------------
+# 2. Install basic packages
+# --------------------------------------------------
+
+echo "Installing basic packages..."
+
 apt-get install -y \
     curl \
     wget \
@@ -25,57 +32,80 @@ apt-get install -y \
     git
 
 # --------------------------------------------------
-# 2. Install AWS CLI v2
+# 3. Install AWS CLI
 # --------------------------------------------------
 
 echo "Installing AWS CLI..."
 
-cd /tmp
+ARCH=$(dpkg --print-architecture)
 
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
-    -o awscliv2.zip
+if [ "$ARCH" = "arm64" ]; then
+    AWS_ARCH="aarch64"
+elif [ "$ARCH" = "amd64" ]; then
+    AWS_ARCH="x86_64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
 
-unzip -q awscliv2.zip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" \
+    -o /tmp/awscliv2.zip
 
-./aws/install
+unzip -q /tmp/awscliv2.zip -d /tmp
 
-rm -rf aws awscliv2.zip
+/tmp/aws/install
+
+rm -rf /tmp/aws /tmp/awscliv2.zip
+
 
 echo "AWS CLI installed:"
 aws --version
 
 # --------------------------------------------------
-# 3. Install kubectl
+# 4. Install kubectl
 # --------------------------------------------------
 
 echo "Installing kubectl..."
 
-KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt)
 
-curl -LO \
-    "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+ARCH=$(dpkg --print-architecture)
 
-install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+if [ "$ARCH" = "arm64" ]; then
+    KUBECTL_ARCH="arm64"
+elif [ "$ARCH" = "amd64" ]; then
+    KUBECTL_ARCH="amd64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
 
-rm kubectl
+curl -fsSL \
+    "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl" \
+    -o /tmp/kubectl
+
+install -o root -g root -m 0755 \
+    /tmp/kubectl \
+    /usr/local/bin/kubectl
+
+rm -f /tmp/kubectl
 
 echo "kubectl installed:"
 kubectl version --client
 
 # --------------------------------------------------
-# 4. Install Helm
+# 5. Install Helm
 # --------------------------------------------------
 
 echo "Installing Helm..."
 
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
-    | bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
 
 echo "Helm installed:"
 helm version
 
 # --------------------------------------------------
-# 5. Install eksctl
+# 6. Install eksctl
 # --------------------------------------------------
 
 echo "Installing eksctl..."
@@ -96,7 +126,7 @@ echo "eksctl installed:"
 eksctl version
 
 # --------------------------------------------------
-# 6. Verification
+# 7. Verification
 # --------------------------------------------------
 
 echo "=========================================="
