@@ -2,6 +2,8 @@ FROM gradle:8.14.3-jdk21
 
 LABEL maintainer="Satyajit Behera"
 
+ARG TARGETARCH
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # ============================================================
@@ -24,11 +26,11 @@ RUN apt-get update && apt-get install -y \
 # ============================================================
 
 RUN install -m 0755 -d /etc/apt/keyrings \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
         -o /etc/apt/keyrings/docker.asc \
     && chmod a+r /etc/apt/keyrings/docker.asc \
     && echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
         $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
         > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
@@ -42,9 +44,17 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 # AWS CLI
 # ============================================================
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
-    -o "/tmp/awscliv2.zip" \
-    && unzip /tmp/awscliv2.zip -d /tmp \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        AWS_ARCH="x86_64"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        AWS_ARCH="aarch64"; \
+    else \
+        echo "Unsupported architecture: $TARGETARCH"; \
+        exit 1; \
+    fi && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" \
+        -o /tmp/awscliv2.zip \
+    && unzip -q /tmp/awscliv2.zip -d /tmp \
     && /tmp/aws/install \
     && rm -rf /tmp/aws /tmp/awscliv2.zip
 
@@ -52,8 +62,16 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
 # yq
 # ============================================================
 
-RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
-    -O /usr/local/bin/yq \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        YQ_ARCH="amd64"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        YQ_ARCH="arm64"; \
+    else \
+        echo "Unsupported architecture: $TARGETARCH"; \
+        exit 1; \
+    fi && \
+    wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${YQ_ARCH} \
+        -O /usr/local/bin/yq \
     && chmod +x /usr/local/bin/yq
 
 
@@ -63,22 +81,6 @@ RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
 
 RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
     | sh -s -- -b /usr/local/bin
-
-
-# ============================================================
-# SonarQube Scanner
-# ============================================================
-
-ARG SONAR_SCANNER_VERSION=7.2.0.4067
-
-RUN wget -q \
-    "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux-x64.zip" \
-    -O /tmp/sonar-scanner.zip \
-    && unzip /tmp/sonar-scanner.zip -d /opt \
-    && mv "/opt/sonar-scanner-${SONAR_SCANNER_VERSION}-linux-x64" /opt/sonar-scanner \
-    && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner \
-    && rm /tmp/sonar-scanner.zip
-
 
 # ============================================================
 # Verify installations
@@ -99,10 +101,7 @@ RUN echo "===== Java =====" && \
     echo "===== yq =====" && \
     yq --version && \
     echo "===== Trivy =====" && \
-    trivy --version && \
-    echo "===== Sonar Scanner =====" && \
-    sonar-scanner --version
-
+    trivy --version
 
 # ============================================================
 # Workspace
