@@ -7,7 +7,7 @@ AstroOps is a **cloud-native DevOps and GitOps project** built around the **Open
 
 The project implements an end-to-end DevOps workflow covering **infrastructure provisioning, continuous integration, containerization, security scanning, Kubernetes application packaging, GitOps-based deployment, and observability**.
 
-The AWS infrastructure is managed using **modular Terraform configurations**, with separate infrastructure for the Terraform backend and EKS environment. Terraform is integrated with **Jenkins CI** to automate the provisioning and management of resources such as **VPC, subnets, security groups, Amazon EKS, Amazon S3, and DynamoDB**.
+The AWS infrastructure is managed using **modular Terraform configurations**, with separate infrastructure for the Terraform backend and EKS environment. Terraform is integrated with **Jenkins CI** to automate the provisioning and management of resources such as **VPC, subnets, Amazon EKS, Amazon S3, and DynamoDB**.
 
 Application CI is implemented through **Jenkins pipelines for the microservices**, with a reusable **Jenkins Shared Library** providing common functionality for source-code checkout, Git commit identification, SonarQube analysis, quality gates, Trivy security scanning, Docker image builds, Amazon ECR authentication, image publishing, and Helm configuration updates.
 
@@ -34,7 +34,7 @@ The OpenTelemetry Demo-based microservices application deployed on Amazon EKS.
 
 [**AstroOps Terraform**](https://github.com/jeet1418/AstroOps-terraform.git)
 
-Terraform configuration for provisioning the AWS infrastructure, including VPC, EKS, subnets, security groups, S3, and DynamoDB.
+Terraform configuration for provisioning the AWS infrastructure, including VPC, EKS, subnets, S3, and DynamoDB.
 
 ### Kubernetes / Helm
 
