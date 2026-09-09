@@ -142,7 +142,7 @@ pipeline {
 
             steps {
 
-                ecrLogin(
+                ecrDockerLogin(
                     region: env.AWS_DEFAULT_REGION,
                     registry: env.ECR_REGISTRY
                 )
