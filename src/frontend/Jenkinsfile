@@ -211,7 +211,7 @@ pipeline {
 
                     directory: 'helm-repo',
                     credentialsId: 'HELM_GIT',
-                    url: 'https://github.com/YOUR-USERNAME/YOUR-HELM-REPO.git',
+                    url: 'https://github.com/jeet1418/AstroOps-helm.git',
                     branch: 'main'
 
                 )
