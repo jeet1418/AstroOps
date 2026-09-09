@@ -253,7 +253,7 @@ pipeline {
                     commitAndPushHelm(
                         credentialsId: 'HELM_GIT',
                         gitUrl:
-                            'https://github.com/jeet1418/AstroOps-helm.git',
+                            'github.com/jeet1418/AstroOps-helm.git',
                         commitMessage:
                             "Update frontend image to ${env.IMAGE_TAG}"
                     )
