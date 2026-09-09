@@ -239,29 +239,6 @@ pipeline {
             }
         }
 
-
-        stage('Test GitHub Push Authentication') {
-            steps {
-                dir('helm-repo') {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'HELM_GIT',
-                            usernameVariable: 'GIT_USERNAME',
-                            passwordVariable: 'GIT_PASSWORD'
-                        )
-                    ]) {
-                        sh '''
-                            git push \
-                                --dry-run \
-                                "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/jeet1418/AstroOps-helm.git" \
-                                HEAD:main
-                        '''
-                    }
-                }
-            }
-        }
-
-
         // ====================================================
         // 15. COMMIT & PUSH HELM CHANGES
         // ====================================================
