@@ -240,7 +240,7 @@ pipeline {
         }
 
 
-        stage('Test GitHub Authentication') {
+        stage('Test GitHub Push Authentication') {
             steps {
                 dir('helm-repo') {
                     withCredentials([
@@ -251,11 +251,10 @@ pipeline {
                         )
                     ]) {
                         sh '''
-                            echo "Git username: $GIT_USERNAME"
-                            echo "Testing GitHub authentication..."
-
-                            git ls-remote \
-                                "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/jeet1418/AstroOps-helm.git"
+                            git push \
+                                --dry-run \
+                                "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/jeet1418/AstroOps-helm.git" \
+                                HEAD:main
                         '''
                     }
                 }
