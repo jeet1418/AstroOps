@@ -5,7 +5,7 @@ pipeline {
     agent {
         docker {
             image 'jeet1418/java-agent:v1'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 986'
         }
     }
 
@@ -15,6 +15,8 @@ pipeline {
     }
 
     environment {
+
+        DOCKER_CONFIG = "${WORKSPACE}/.docker"
 
         // ====================================================
         // AWS
@@ -141,7 +143,7 @@ pipeline {
 
             steps {
 
-                ecrLogin(
+                ecrDockerLogin(
                     region: env.AWS_DEFAULT_REGION,
                     registry: env.ECR_REGISTRY
                 )
@@ -208,7 +210,7 @@ pipeline {
 
                     directory: 'helm-repo',
                     credentialsId: 'HELM_GIT',
-                    url: 'https://github.com/YOUR-USERNAME/YOUR-HELM-REPO.git',
+                    url: 'https://github.com/jeet1418/AstroOps-helm.git',
                     branch: 'main'
 
                 )
@@ -250,7 +252,7 @@ pipeline {
                     commitAndPushHelm(
                         credentialsId: 'HELM_GIT',
                         gitUrl:
-                            'github.com/YOUR-USERNAME/YOUR-HELM-REPO.git',
+                            'github.com/jeet1418/AstroOps-helm.git',
                         commitMessage:
                             "Update ad image to ${env.IMAGE_TAG}"
                     )
