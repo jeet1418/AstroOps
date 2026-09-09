@@ -142,13 +142,10 @@ pipeline {
 
             steps {
 
-                 script {
-                    def login = ecrLogin(
-                        registryIds: [env.AWS_ACCOUNT_ID]
-                    )
-
-                    sh login
-                }
+                ecrLogin(
+                    region: env.AWS_DEFAULT_REGION,
+                    registry: env.ECR_REGISTRY
+                )
             }
         }
 
