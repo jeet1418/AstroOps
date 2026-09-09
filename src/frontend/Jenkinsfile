@@ -240,6 +240,29 @@ pipeline {
         }
 
 
+        stage('Test GitHub Authentication') {
+            steps {
+                dir('helm-repo') {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'HELM_GIT',
+                            usernameVariable: 'GIT_USERNAME',
+                            passwordVariable: 'GIT_PASSWORD'
+                        )
+                    ]) {
+                        sh '''
+                            echo "Git username: $GIT_USERNAME"
+                            echo "Testing GitHub authentication..."
+
+                            git ls-remote \
+                                "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/jeet1418/AstroOps-helm.git"
+                        '''
+                    }
+                }
+            }
+        }
+
+
         // ====================================================
         // 15. COMMIT & PUSH HELM CHANGES
         // ====================================================
